@@ -1,9 +1,21 @@
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, MouseEvent } from "react";
 import { Navbar } from "./components/Navbar";
 import { Days } from "./components/Days";
 import { Resources } from "./components/Resources";
 
+interface Event {
+  id: number;
+  resource: number;
+  day: number;
+  start: number;
+  width: number;
+  color: string;
+  startTime: number;
+  endTime: number;
+  month: number;
+  year: number;
+}
 
 
 function App() {
@@ -15,18 +27,19 @@ function App() {
   const [month, setMonth] = useState(selectedDate.getMonth());
 
   // State to manage the list of events
-  const [events, setEvents] = useState([]);
+  const [events, setEvents] = useState<Event[]>([]);
 
   // State to manage the currently dragged event
-  const [currentDragEvent, setCurrentDragEvent] = useState(null);
+  const [currentDragEvent, setCurrentDragEvent] = useState<Event | null>(null);
 
   // Ref to keep track of the drag event's initial position
-  const dragEvent = useRef(null);
+  const dragEvent = useRef<{ newEvent: Event; startX: number; initialCell: DOMRect } | null>(null);
+
 
   useEffect(() => {
     // Load events from local storage when the component mounts
 
-    const storedEvents = JSON.parse(localStorage.getItem("events")) || [];
+  const storedEvents = JSON.parse(localStorage.getItem('events') || '[]') as Event[];
     setEvents(storedEvents);
   }, []);
 
@@ -37,15 +50,15 @@ function App() {
   }, [events]);
 
   // Handler to update the selected date and year/month based on the new date
-  const handleDateChange = (date) => {
+  const handleDateChange = (date:Date) => {
     setSelectedDate(date);
     setYear(date.getFullYear());
     setMonth(date.getMonth());
   };
 
   // Handler for mouse down event to start dragging an event
-  const handleMouseDown = (e, resourceIndex, dayIndex) => {
-    const cell = e.target.getBoundingClientRect();
+  const handleMouseDown = (e : MouseEvent, resourceIndex : number, dayIndex : number) => {
+   const cell = (e.target as HTMLElement).getBoundingClientRect();
     const startX = e.clientX - cell.left;
 
     // Initialize a new event with start values and current month/year
@@ -58,15 +71,15 @@ function App() {
       color: getRandomColor(resourceIndex),
       startTime: 0,
       endTime: 0,
-      month: month,
-      year: year,
+      month,
+      year,
     };
 
     dragEvent.current = { newEvent, startX, initialCell: cell };
     setCurrentDragEvent(newEvent);
 
     // Handler to update event width while dragging
-    const handleMouseMove = (e) => {
+    const handleMouseMove = (e : MouseEvent) => {
       if (dragEvent.current) {
         const { newEvent, startX, initialCell } = dragEvent.current;
         const newWidth = Math.max(e.clientX - initialCell.left - startX, 0);
@@ -88,10 +101,7 @@ function App() {
     const handleMouseUp = () => {
       if (dragEvent.current) {
         const { newEvent, startX, initialCell } = dragEvent.current;
-        const newWidth = Math.max(
-          window.event.clientX - initialCell.left - startX,
-          0
-        );
+        const newWidth = Math.max((window.event as unknown as MouseEvent).clientX - initialCell.left - startX, 0);
         const cellWidth = initialCell.width;
 
         // Only add the event if its width is greater than zero not on every click
@@ -114,24 +124,24 @@ function App() {
       // Cleanup after dragging
       setCurrentDragEvent(null);
       dragEvent.current = null;
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
+      document.removeEventListener("mousemove", handleMouseMove as unknown as EventListener);
+      document.removeEventListener("mouseup", handleMouseUp as EventListener);
     };
 
     // Attach mouse move and mouse up event listeners
-    document.addEventListener("mousemove", handleMouseMove);
-    document.addEventListener("mouseup", handleMouseUp);
+    document.addEventListener("mousemove", handleMouseMove as unknown as EventListener);
+    document.addEventListener("mouseup", handleMouseUp as EventListener);
   };
 
   // Handler to delete an event after confirmation
-  const handleDelete = (id) => {
+  const handleDelete = (id : number) => {
     if (window.confirm("Are you sure you want to delete this event?")) {
       setEvents((prevEvents) => prevEvents.filter((event) => event.id !== id));
     }
   };
 
   // Function to get a random color based on resource index
-  const getRandomColor = (index) => {
+  const getRandomColor = (index : number) => {
     const colors = [
       "#f8b400",
       "#ff6b6b",
