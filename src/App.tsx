@@ -62,7 +62,7 @@ function App() {
     const startX = e.clientX - cell.left;
 
     // Initialize a new event with start values and current month/year
-    const newEvent = {
+    const newEvent : Event = {
       id: new Date().getTime(),
       resource: resourceIndex,
       day: dayIndex,
